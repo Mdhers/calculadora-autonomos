@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Financiera para Autónomos (Barcelona 2025)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF y html2canvas CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* Estilos personalizados para complementar Tailwind */
+        body {
+            background-color: #f8f7f4; /* Un gris claro cálido para el fondo */
+        }
+        .thefork-blue {
+            background-color: #003366;
+            color: white;
+        }
+        .thefork-blue-text {
+            color: #003366;
+        }
+        .thefork-blue-border {
+            border-color: #003366;
+        }
+        .btn-period.active {
+            background-color: #003366;
+            color: white;
+            border-color: #003366;
+        }
+        .btn-period {
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+
+        <!-- Cabecera -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold thefork-blue-text mb-2">Calculadora Financiera para Autónomos</h1>
+            <p class="text-lg text-gray-600">Barcelona 2025</p>
+            <p class="mt-2 text-gray-500">Una herramienta para simular tus ingresos netos y entender los impuestos asociados.</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Columna de Entradas e Información -->
+            <div class="lg:col-span-1 space-y-8">
+                <!-- Sección de Entradas del Usuario -->
+                <section id="inputs-section" class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2 thefork-blue-text">Tus Datos Financieros</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="ingresos-brutos" class="block text-sm font-medium text-gray-700">Ingresos Brutos Mensuales (€)</label>
+                            <input type="number" id="ingresos-brutos" value="4500" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
+                        </div>
+                        <div>
+                            <label for="gastos-deducibles" class="block text-sm font-medium text-gray-700">Gastos Deducibles Mensuales (€)</label>
+                            <input type="number" id="gastos-deducibles" value="800" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
+                        </div>
+                        <div>
+                            <label for="cuota-autonomos" class="block text-sm font-medium text-gray-700">Cuota de Autónomos Mensual (€)</label>
+                            <input type="number" id="cuota-autonomos" value="605" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Resumen de Gastos Deducibles -->
+                <section class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-3 thefork-blue-text">Ejemplos de Gastos Deducibles</h3>
+                    <ul class="list-disc list-inside text-gray-600 space-y-1 text-sm">
+                        <li>Consumos de explotación (materias primas).</li>
+                        <li>Sueldos y salarios, y Seguridad Social.</li>
+                        <li>Alquileres de locales y oficinas.</li>
+                        <li>Suministros (agua, luz, teléfono, internet).</li>
+                        <li>Servicios de profesionales independientes.</li>
+                        <li>Cuotas de asociaciones empresariales.</li>
+                        <li>Software y licencias.</li>
+                    </ul>
+                </section>
+            </div>
+
+            <!-- Columna de Resultados -->
+            <div class="lg:col-span-2 space-y-8">
+                <section id="cost-comparison-section" class="bg-white p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2 thefork-blue-text">Resultados Calculados</h2>
+
+                    <!-- Selector de Periodo -->
+                    <div class="flex justify-center mb-6 space-x-2">
+                        <button id="btn-mensual" class="btn-period px-4 py-2 border rounded-md font-semibold text-sm active">Mensual</button>
+                        <button id="btn-trimestral" class="btn-period px-4 py-2 border rounded-md font-semibold text-sm">Trimestral</button>
+                        <button id="btn-anual" class="btn-period px-4 py-2 border rounded-md font-semibold text-sm">Anual</button>
+                    </div>
+
+                    <!-- Contenedores de Resultados -->
+                    <div id="resultados-container">
+                        <!-- Resultados Mensuales -->
+                        <div id="resultados-mensual" class="space-y-4">
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="font-medium text-gray-700">Ingresos Brutos:</span>
+                                <span id="bruto-mensual" class="font-bold text-lg text-green-600"></span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                                <span class="font-medium text-gray-700">Cuota Autónomos:</span>
+                                <span id="cuota-mensual" class="font-bold text-lg text-red-600"></span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                                <span class="font-medium text-gray-700">IVA (21%):</span>
+                                <span id="iva-mensual" class="font-bold text-lg text-red-600"></span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                                <span class="font-medium text-gray-700">IRPF:</span>
+                                <span id="irpf-mensual" class="font-bold text-lg text-red-600"></span>
+                            </div>
+                            <div class="flex justify-between items-center p-4 bg-blue-50 rounded-lg mt-4 border-t-4 thefork-blue-border">
+                                <span class="font-extrabold text-xl thefork-blue-text">Neto Final:</span>
+                                <span id="neto-mensual" class="font-extrabold text-2xl thefork-blue-text"></span>
+                            </div>
+                        </div>
+
+                        <!-- Resultados Trimestrales -->
+                        <div id="resultados-trimestral" class="hidden space-y-4">
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="font-medium text-gray-700">Ingresos Brutos:</span>
+                                <span id="bruto-trimestral" class="font-bold text-lg text-green-600"></span>
+                            </div>
+                             <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                                <span class="font-medium text-gray-700">Cuota Autónomos:</span>
+                                <span id="cuota-trimestral" class="font-bold text-lg text-red-600"></span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                                <span class="font-medium text-gray-700">IVA (21%):</span>
+                                <span id="iva-trimestral" class="font-bold text-lg text-red-600"></span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                                <span class="font-medium text-gray-700">IRPF:</span>
+                                <span id="irpf-trimestral" class="font-bold text-lg text-red-600"></span>
+                            </div>
+                            <div class="flex justify-between items-center p-4 bg-blue-50 rounded-lg mt-4 border-t-4 thefork-blue-border">
+                                <span class="font-extrabold text-xl thefork-blue-text">Neto Final:</span>
+                                <span id="neto-trimestral" class="font-extrabold text-2xl thefork-blue-text"></span>
+                            </div>
+                        </div>
+
+                        <!-- Resultados Anuales -->
+                        <div id="resultados-anual" class="hidden space-y-4">
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="font-medium text-gray-700">Ingresos Brutos:</span>
+                                <span id="bruto-anual" class="font-bold text-lg text-green-600"></span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                                <span class="font-medium text-gray-700">Cuota Autónomos:</span>
+                                <span id="cuota-anual" class="font-bold text-lg text-red-600"></span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                                <span class="font-medium text-gray-700">IVA (21%):</span>
+                                <span id="iva-anual" class="font-bold text-lg text-red-600"></span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                                <span class="font-medium text-gray-700">IRPF:</span>
+                                <span id="irpf-anual" class="font-bold text-lg text-red-600"></span>
+                            </div>
+                            <div class="flex justify-between items-center p-4 bg-blue-50 rounded-lg mt-4 border-t-4 thefork-blue-border">
+                                <span class="font-extrabold text-xl thefork-blue-text">Neto Final:</span>
+                                <span id="neto-anual" class="font-extrabold text-2xl thefork-blue-text"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones de Acción -->
+                    <div class="mt-8 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
+                        <button id="copy-btn" class="px-4 py-2 border border-gray-400 rounded-md font-semibold text-sm hover:bg-gray-100 transition">Copiar Tabla a Portapapeles</button>
+                        <button id="pdf-btn" class="px-4 py-2 thefork-blue rounded-md font-semibold text-sm hover:opacity-90 transition">Exportar a PDF</button>
+                    </div>
+                    <div id="copy-feedback" class="text-right text-green-600 mt-2 text-sm font-medium h-4"></div>
+                </section>
+                
+                <!-- Sección del Gráfico -->
+                <section class="bg-white p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2 thefork-blue-text">Distribución Anual</h2>
+                    <div class="w-full max-w-md mx-auto">
+                        <canvas id="distribucion-chart"></canvas>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Lógica de la aplicación con Vanilla JavaScript
+
+        // Constantes de impuestos (hardcoded)
+        const IVA_TIPO = 0.21;
+        const TRAMOS_IRPF_2025 = [
+            { limite: 12450, tipo: 0.19 },
+            { limite: 20200, tipo: 0.24 },
+            { limite: 35200, tipo: 0.30 },
+            { limite: 60000, tipo: 0.37 },
+            { limite: 300000, tipo: 0.45 }
+        ];
+
+        // Referencias a elementos del DOM
+        const inputs = {
+            ingresosBrutos: document.getElementById('ingresos-brutos'),
+            gastosDeducibles: document.getElementById('gastos-deducibles'),
+            cuotaAutonomos: document.getElementById('cuota-autonomos'),
+        };
+
+        const outputs = {
+            mensual: {
+                bruto: document.getElementById('bruto-mensual'),
+                cuota: document.getElementById('cuota-mensual'),
+                iva: document.getElementById('iva-mensual'),
+                irpf: document.getElementById('irpf-mensual'),
+                neto: document.getElementById('neto-mensual'),
+                view: document.getElementById('resultados-mensual'),
+                btn: document.getElementById('btn-mensual')
+            },
+            trimestral: {
+                bruto: document.getElementById('bruto-trimestral'),
+                cuota: document.getElementById('cuota-trimestral'),
+                iva: document.getElementById('iva-trimestral'),
+                irpf: document.getElementById('irpf-trimestral'),
+                neto: document.getElementById('neto-trimestral'),
+                view: document.getElementById('resultados-trimestral'),
+                btn: document.getElementById('btn-trimestral')
+            },
+            anual: {
+                bruto: document.getElementById('bruto-anual'),
+                cuota: document.getElementById('cuota-anual'),
+                iva: document.getElementById('iva-anual'),
+                irpf: document.getElementById('irpf-anual'),
+                neto: document.getElementById('neto-anual'),
+                view: document.getElementById('resultados-anual'),
+                btn: document.getElementById('btn-anual')
+            }
+        };
+        
+        const copyBtn = document.getElementById('copy-btn');
+        const pdfBtn = document.getElementById('pdf-btn');
+        const copyFeedback = document.getElementById('copy-feedback');
+        const chartCanvas = document.getElementById('distribucion-chart');
+        let distribucionChart;
+
+        // Función para formatear a moneda
+        const formatCurrency = (value) => {
+            return value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+        };
+
+        // Función para calcular el IRPF progresivo
+        const calcularIRPF = (baseImponible) => {
+            let irpfTotal = 0;
+            let baseRestante = baseImponible;
+            let limiteAnterior = 0;
+
+            for (const tramo of TRAMOS_IRPF_2025) {
+                if (baseImponible > limiteAnterior) {
+                    const baseEnTramo = Math.min(baseImponible - limiteAnterior, tramo.limite - limiteAnterior);
+                    irpfTotal += baseEnTramo * tramo.tipo;
+                    limiteAnterior = tramo.limite;
+                } else {
+                    break;
+                }
+            }
+             if (baseImponible > limiteAnterior) {
+                irpfTotal += (baseImponible - limiteAnterior) * TRAMOS_IRPF_2025[TRAMOS_IRPF_2025.length - 1].tipo;
+            }
+
+            return irpfTotal > 0 ? irpfTotal : 0;
+        };
+
+        // Función para crear o actualizar el gráfico
+        const actualizarGrafico = (datos) => {
+            const data = {
+                labels: ['Neto Final', 'IRPF', 'IVA', 'Cuota Autónomos'],
+                datasets: [{
+                    label: 'Distribución Anual',
+                    data: [datos.neto, datos.irpf, datos.iva, datos.cuota],
+                    backgroundColor: [
+                        '#16a34a', // Verde para el neto
+                        '#ef4444', // Rojo para IRPF
+                        '#f97316', // Naranja para IVA
+                        '#6b7280'  // Gris para la cuota
+                    ],
+                    borderColor: '#f8f7f4',
+                    borderWidth: 4,
+                    hoverOffset: 8
+                }]
+            };
+
+            if (distribucionChart) {
+                distribucionChart.data = data;
+                distribucionChart.update();
+            } else {
+                distribucionChart = new Chart(chartCanvas, {
+                    type: 'doughnut',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += formatCurrency(context.parsed);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                });
+            }
+        };
+
+        // Función principal de cálculo
+        const calcularYActualizar = () => {
+            // 1. Leer valores de entrada
+            const ingresosBrutosMensuales = parseFloat(inputs.ingresosBrutos.value) || 0;
+            const gastosDeduciblesMensuales = parseFloat(inputs.gastosDeducibles.value) || 0;
+            const cuotaAutonomosMensual = parseFloat(inputs.cuotaAutonomos.value) || 0;
+
+            // 2. Cálculos Anuales
+            const ingresosBrutosAnuales = ingresosBrutosMensuales * 12;
+            const gastosDeduciblesAnuales = gastosDeduciblesMensuales * 12;
+            const cuotaAutonomosAnual = cuotaAutonomosMensual * 12;
+            
+            const baseImponibleIRPF = Math.max(0, ingresosBrutosAnuales - gastosDeduciblesAnuales - cuotaAutonomosAnual);
+            
+            const irpfAnual = calcularIRPF(baseImponibleIRPF);
+            const ivaAnual = ingresosBrutosAnuales * IVA_TIPO;
+            
+            const netoAnual = ingresosBrutosAnuales - cuotaAutonomosAnual - ivaAnual - irpfAnual;
+
+            // 3. Actualizar DOM
+            // Anual
+            outputs.anual.bruto.textContent = formatCurrency(ingresosBrutosAnuales);
+            outputs.anual.cuota.textContent = formatCurrency(cuotaAutonomosAnual);
+            outputs.anual.iva.textContent = formatCurrency(ivaAnual);
+            outputs.anual.irpf.textContent = formatCurrency(irpfAnual);
+            outputs.anual.neto.textContent = formatCurrency(netoAnual);
+
+            // Trimestral
+            outputs.trimestral.bruto.textContent = formatCurrency(ingresosBrutosAnuales / 4);
+            outputs.trimestral.cuota.textContent = formatCurrency(cuotaAutonomosAnual / 4);
+            outputs.trimestral.iva.textContent = formatCurrency(ivaAnual / 4);
+            outputs.trimestral.irpf.textContent = formatCurrency(irpfAnual / 4);
+            outputs.trimestral.neto.textContent = formatCurrency(netoAnual / 4);
+
+            // Mensual
+            outputs.mensual.bruto.textContent = formatCurrency(ingresosBrutosAnuales / 12);
+            outputs.mensual.cuota.textContent = formatCurrency(cuotaAutonomosAnual / 12);
+            outputs.mensual.iva.textContent = formatCurrency(ivaAnual / 12);
+            outputs.mensual.irpf.textContent = formatCurrency(irpfAnual / 12);
+            outputs.mensual.neto.textContent = formatCurrency(netoAnual / 12);
+
+            // 4. Actualizar Gráfico (con valores anuales)
+            actualizarGrafico({
+                neto: Math.max(0, netoAnual),
+                irpf: irpfAnual,
+                iva: ivaAnual,
+                cuota: cuotaAutonomosAnual
+            });
+        };
+        
+        // Función para cambiar la vista de periodo
+        const cambiarVista = (periodo) => {
+            Object.keys(outputs).forEach(p => {
+                if (p === periodo) {
+                    outputs[p].view.classList.remove('hidden');
+                    outputs[p].btn.classList.add('active');
+                } else {
+                    outputs[p].view.classList.add('hidden');
+                    outputs[p].btn.classList.remove('active');
+                }
+            });
+        };
+
+        // Event Listeners para los inputs
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', calcularYActualizar);
+        });
+        
+        // Event Listeners para los botones de periodo
+        outputs.mensual.btn.addEventListener('click', () => cambiarVista('mensual'));
+        outputs.trimestral.btn.addEventListener('click', () => cambiarVista('trimestral'));
+        outputs.anual.btn.addEventListener('click', () => cambiarVista('anual'));
+
+        // Event Listener para copiar a portapapeles
+        copyBtn.addEventListener('click', () => {
+            const activePeriod = document.querySelector('.btn-period.active').id.split('-')[1];
+            
+            const data = [
+                ["Concepto", "Valor"],
+                ["Ingresos Brutos Mensuales", inputs.ingresosBrutos.value],
+                ["Gastos Deducibles Mensuales", inputs.gastosDeducibles.value],
+                ["Cuota Autónomos Mensual", inputs.cuotaAutonomos.value],
+                ["---", "---"],
+                [`Resultados (${activePeriod})`, ""],
+                ["Ingresos Brutos", outputs[activePeriod].bruto.textContent],
+                ["Cuota Autónomos", outputs[activePeriod].cuota.textContent],
+                ["IVA", outputs[activePeriod].iva.textContent],
+                ["IRPF", outputs[activePeriod].irpf.textContent],
+                ["Neto Final", outputs[activePeriod].neto.textContent]
+            ];
+            
+            const tsv = data.map(row => row.join('\t')).join('\n');
+            
+            const textarea = document.createElement('textarea');
+            textarea.value = tsv;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                copyFeedback.textContent = '¡Copiado al portapapeles!';
+                setTimeout(() => copyFeedback.textContent = '', 2000);
+            } catch (err) {
+                copyFeedback.textContent = 'Error al copiar.';
+            }
+            document.body.removeChild(textarea);
+        });
+
+        // Event Listener para exportar a PDF
+        pdfBtn.addEventListener('click', () => {
+            const { jsPDF } = window.jspdf;
+            const elementToCapture = document.querySelector('.lg\\:col-span-2');
+            
+            html2canvas(elementToCapture, { scale: 2 }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                let position = 0;
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                pdf.save("calculo-autonomo-barcelona-2025.pdf");
+            });
+        });
+
+        // Carga inicial
+        document.addEventListener('DOMContentLoaded', () => {
+            calcularYActualizar();
+            cambiarVista('mensual');
+        });
+
+    </script>
+</body>
+</html>
