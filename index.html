@@ -56,16 +56,22 @@
                     <h2 class="text-2xl font-semibold mb-4 border-b pb-2 thefork-blue-text">Tus Datos Financieros</h2>
                     <div class="space-y-4">
                         <div>
-                            <label for="ingresos-brutos" class="block text-sm font-medium text-gray-700">Ingresos Brutos Mensuales (€)</label>
-                            <input type="number" id="ingresos-brutos" value="4500" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
+                            <label for="ingresos-brutos" class="block text-sm font-medium text-gray-700">Ingresos Brutos Anuales (€)</label>
+                            <input type="number" id="ingresos-brutos" value="54000" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
                         </div>
                         <div>
-                            <label for="gastos-deducibles" class="block text-sm font-medium text-gray-700">Gastos Deducibles Mensuales (€)</label>
-                            <input type="number" id="gastos-deducibles" value="800" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
+                            <label for="gastos-deducibles" class="block text-sm font-medium text-gray-700">Gastos Deducibles Anuales (€)</label>
+                            <input type="number" id="gastos-deducibles" value="9600" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
                         </div>
                         <div>
-                            <label for="cuota-autonomos" class="block text-sm font-medium text-gray-700">Cuota de Autónomos Mensual (€)</label>
-                            <input type="number" id="cuota-autonomos" value="605" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
+                            <label for="cuota-autonomos" class="block text-sm font-medium text-gray-700">Cuota de Autónomos Anual (€)</label>
+                            <input type="number" id="cuota-autonomos" value="7260" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
+                        </div>
+                        <div class="pt-2">
+                             <label for="aplicar-iva" class="flex items-center text-sm font-medium text-gray-700 cursor-pointer">
+                                <input type="checkbox" id="aplicar-iva" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" checked>
+                                <span class="ml-2">Aplicar IVA (21%)</span>
+                            </label>
                         </div>
                     </div>
                 </section>
@@ -109,7 +115,7 @@
                                 <span class="font-medium text-gray-700">Cuota Autónomos:</span>
                                 <span id="cuota-mensual" class="font-bold text-lg text-red-600"></span>
                             </div>
-                            <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                            <div id="iva-mensual-container" class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
                                 <span class="font-medium text-gray-700">IVA (21%):</span>
                                 <span id="iva-mensual" class="font-bold text-lg text-red-600"></span>
                             </div>
@@ -133,7 +139,7 @@
                                 <span class="font-medium text-gray-700">Cuota Autónomos:</span>
                                 <span id="cuota-trimestral" class="font-bold text-lg text-red-600"></span>
                             </div>
-                            <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                            <div id="iva-trimestral-container" class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
                                 <span class="font-medium text-gray-700">IVA (21%):</span>
                                 <span id="iva-trimestral" class="font-bold text-lg text-red-600"></span>
                             </div>
@@ -157,7 +163,7 @@
                                 <span class="font-medium text-gray-700">Cuota Autónomos:</span>
                                 <span id="cuota-anual" class="font-bold text-lg text-red-600"></span>
                             </div>
-                            <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                            <div id="iva-anual-container" class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
                                 <span class="font-medium text-gray-700">IVA (21%):</span>
                                 <span id="iva-anual" class="font-bold text-lg text-red-600"></span>
                             </div>
@@ -209,6 +215,7 @@
             ingresosBrutos: document.getElementById('ingresos-brutos'),
             gastosDeducibles: document.getElementById('gastos-deducibles'),
             cuotaAutonomos: document.getElementById('cuota-autonomos'),
+            aplicarIva: document.getElementById('aplicar-iva')
         };
 
         const outputs = {
@@ -219,7 +226,8 @@
                 irpf: document.getElementById('irpf-mensual'),
                 neto: document.getElementById('neto-mensual'),
                 view: document.getElementById('resultados-mensual'),
-                btn: document.getElementById('btn-mensual')
+                btn: document.getElementById('btn-mensual'),
+                ivaContainer: document.getElementById('iva-mensual-container')
             },
             trimestral: {
                 bruto: document.getElementById('bruto-trimestral'),
@@ -228,7 +236,8 @@
                 irpf: document.getElementById('irpf-trimestral'),
                 neto: document.getElementById('neto-trimestral'),
                 view: document.getElementById('resultados-trimestral'),
-                btn: document.getElementById('btn-trimestral')
+                btn: document.getElementById('btn-trimestral'),
+                ivaContainer: document.getElementById('iva-trimestral-container')
             },
             anual: {
                 bruto: document.getElementById('bruto-anual'),
@@ -237,7 +246,8 @@
                 irpf: document.getElementById('irpf-anual'),
                 neto: document.getElementById('neto-anual'),
                 view: document.getElementById('resultados-anual'),
-                btn: document.getElementById('btn-anual')
+                btn: document.getElementById('btn-anual'),
+                ivaContainer: document.getElementById('iva-anual-container')
             }
         };
         
@@ -255,7 +265,6 @@
         // Función para calcular el IRPF progresivo
         const calcularIRPF = (baseImponible) => {
             let irpfTotal = 0;
-            let baseRestante = baseImponible;
             let limiteAnterior = 0;
 
             for (const tramo of TRAMOS_IRPF_2025) {
@@ -276,15 +285,14 @@
 
         // Función para crear o actualizar el gráfico
         const actualizarGrafico = (datos) => {
-            const data = {
-                labels: ['Neto Final', 'IRPF', 'IVA', 'Cuota Autónomos'],
+            const chartData = {
+                labels: ['Neto Final', 'IRPF', 'Cuota Autónomos'],
                 datasets: [{
                     label: 'Distribución Anual',
-                    data: [datos.neto, datos.irpf, datos.iva, datos.cuota],
+                    data: [datos.neto, datos.irpf, datos.cuota],
                     backgroundColor: [
                         '#16a34a', // Verde para el neto
                         '#ef4444', // Rojo para IRPF
-                        '#f97316', // Naranja para IVA
                         '#6b7280'  // Gris para la cuota
                     ],
                     borderColor: '#f8f7f4',
@@ -293,13 +301,19 @@
                 }]
             };
 
+            if (datos.iva > 0) {
+                chartData.labels.splice(2, 0, 'IVA');
+                chartData.datasets[0].data.splice(2, 0, datos.iva);
+                chartData.datasets[0].backgroundColor.splice(2, 0, '#f97316'); // Naranja para IVA
+            }
+
             if (distribucionChart) {
-                distribucionChart.data = data;
+                distribucionChart.data = chartData;
                 distribucionChart.update();
             } else {
                 distribucionChart = new Chart(chartCanvas, {
                     type: 'doughnut',
-                    data: data,
+                    data: chartData,
                     options: {
                         responsive: true,
                         plugins: {
@@ -328,20 +342,17 @@
 
         // Función principal de cálculo
         const calcularYActualizar = () => {
-            // 1. Leer valores de entrada
-            const ingresosBrutosMensuales = parseFloat(inputs.ingresosBrutos.value) || 0;
-            const gastosDeduciblesMensuales = parseFloat(inputs.gastosDeducibles.value) || 0;
-            const cuotaAutonomosMensual = parseFloat(inputs.cuotaAutonomos.value) || 0;
+            // 1. Leer valores de entrada (ahora son anuales)
+            const ingresosBrutosAnuales = parseFloat(inputs.ingresosBrutos.value) || 0;
+            const gastosDeduciblesAnuales = parseFloat(inputs.gastosDeducibles.value) || 0;
+            const cuotaAutonomosAnual = parseFloat(inputs.cuotaAutonomos.value) || 0;
+            const aplicarIva = inputs.aplicarIva.checked;
 
             // 2. Cálculos Anuales
-            const ingresosBrutosAnuales = ingresosBrutosMensuales * 12;
-            const gastosDeduciblesAnuales = gastosDeduciblesMensuales * 12;
-            const cuotaAutonomosAnual = cuotaAutonomosMensual * 12;
-            
             const baseImponibleIRPF = Math.max(0, ingresosBrutosAnuales - gastosDeduciblesAnuales - cuotaAutonomosAnual);
             
             const irpfAnual = calcularIRPF(baseImponibleIRPF);
-            const ivaAnual = ingresosBrutosAnuales * IVA_TIPO;
+            const ivaAnual = aplicarIva ? ingresosBrutosAnuales * IVA_TIPO : 0;
             
             const netoAnual = ingresosBrutosAnuales - cuotaAutonomosAnual - ivaAnual - irpfAnual;
 
@@ -366,6 +377,11 @@
             outputs.mensual.iva.textContent = formatCurrency(ivaAnual / 12);
             outputs.mensual.irpf.textContent = formatCurrency(irpfAnual / 12);
             outputs.mensual.neto.textContent = formatCurrency(netoAnual / 12);
+            
+            // Ocultar/mostrar fila de IVA
+            [outputs.mensual, outputs.trimestral, outputs.anual].forEach(p => {
+                p.ivaContainer.style.display = aplicarIva ? 'flex' : 'none';
+            });
 
             // 4. Actualizar Gráfico (con valores anuales)
             actualizarGrafico({
@@ -382,7 +398,7 @@
                 if (p === periodo) {
                     outputs[p].view.classList.remove('hidden');
                     outputs[p].btn.classList.add('active');
-                } else {
+                } else if (outputs[p].view) {
                     outputs[p].view.classList.add('hidden');
                     outputs[p].btn.classList.remove('active');
                 }
@@ -405,17 +421,22 @@
             
             const data = [
                 ["Concepto", "Valor"],
-                ["Ingresos Brutos Mensuales", inputs.ingresosBrutos.value],
-                ["Gastos Deducibles Mensuales", inputs.gastosDeducibles.value],
-                ["Cuota Autónomos Mensual", inputs.cuotaAutonomos.value],
+                ["Ingresos Brutos Anuales", inputs.ingresosBrutos.value],
+                ["Gastos Deducibles Anuales", inputs.gastosDeducibles.value],
+                ["Cuota Autónomos Anual", inputs.cuotaAutonomos.value],
+                ["Aplicar IVA", inputs.aplicarIva.checked ? "Sí" : "No"],
                 ["---", "---"],
                 [`Resultados (${activePeriod})`, ""],
                 ["Ingresos Brutos", outputs[activePeriod].bruto.textContent],
                 ["Cuota Autónomos", outputs[activePeriod].cuota.textContent],
-                ["IVA", outputs[activePeriod].iva.textContent],
-                ["IRPF", outputs[activePeriod].irpf.textContent],
-                ["Neto Final", outputs[activePeriod].neto.textContent]
             ];
+
+            if (inputs.aplicarIva.checked) {
+                data.push(["IVA", outputs[activePeriod].iva.textContent]);
+            }
+            
+            data.push(["IRPF", outputs[activePeriod].irpf.textContent]);
+            data.push(["Neto Final", outputs[activePeriod].neto.textContent]);
             
             const tsv = data.map(row => row.join('\t')).join('\n');
             
