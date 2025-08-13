@@ -34,6 +34,9 @@
         .btn-period {
             transition: all 0.3s ease-in-out;
         }
+        .delete-btn {
+            transition: color 0.2s;
+        }
     </style>
 </head>
 <body class="font-sans text-gray-800">
@@ -60,10 +63,6 @@
                             <input type="number" id="ingresos-brutos" value="54000" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
                         </div>
                         <div>
-                            <label for="gastos-deducibles" class="block text-sm font-medium text-gray-700">Gastos Deducibles Anuales (€)</label>
-                            <input type="number" id="gastos-deducibles" value="9600" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
-                        </div>
-                        <div>
                             <label for="cuota-autonomos" class="block text-sm font-medium text-gray-700">Cuota de Autónomos Anual (€)</label>
                             <input type="number" id="cuota-autonomos" value="7260" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
                         </div>
@@ -76,18 +75,27 @@
                     </div>
                 </section>
 
-                <!-- Resumen de Gastos Deducibles -->
+                <!-- Sección de Gastos Deducibles -->
                 <section class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-xl font-semibold mb-3 thefork-blue-text">Ejemplos de Gastos Deducibles</h3>
-                    <ul class="list-disc list-inside text-gray-600 space-y-1 text-sm">
-                        <li>Consumos de explotación (materias primas).</li>
-                        <li>Sueldos y salarios, y Seguridad Social.</li>
-                        <li>Alquileres de locales y oficinas.</li>
-                        <li>Suministros (agua, luz, teléfono, internet).</li>
-                        <li>Servicios de profesionales independientes.</li>
-                        <li>Cuotas de asociaciones empresariales.</li>
-                        <li>Software y licencias.</li>
-                    </ul>
+                    <h3 class="text-xl font-semibold mb-3 thefork-blue-text">Gastos Deducibles</h3>
+                    <div class="space-y-3 mb-4">
+                        <div>
+                             <label for="gasto-descripcion" class="block text-sm font-medium text-gray-700">Concepto del Gasto</label>
+                             <input type="text" id="gasto-descripcion" placeholder="Ej: Alquiler de oficina" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2">
+                        </div>
+                        <div>
+                             <label for="gasto-importe" class="block text-sm font-medium text-gray-700">Importe (€)</label>
+                             <input type="number" id="gasto-importe" placeholder="500" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2">
+                        </div>
+                        <button id="add-gasto-btn" class="w-full thefork-blue text-white font-bold py-2 px-4 rounded hover:opacity-90 transition-opacity">Añadir Gasto</button>
+                    </div>
+                    <div id="lista-gastos" class="space-y-2 max-h-48 overflow-y-auto pr-2">
+                        <!-- Los gastos se añadirán aquí dinámicamente -->
+                    </div>
+                    <div class="mt-4 pt-4 border-t flex justify-between items-center">
+                        <span class="font-bold text-lg">Total Deducible:</span>
+                        <span id="total-gastos-deducibles" class="font-bold text-lg thefork-blue-text">0,00 €</span>
+                    </div>
                 </section>
             </div>
 
@@ -199,283 +207,230 @@
 
     <script>
         // Lógica de la aplicación con Vanilla JavaScript
+        document.addEventListener('DOMContentLoaded', () => {
 
-        // Constantes de impuestos (hardcoded)
-        const IVA_TIPO = 0.21;
-        const TRAMOS_IRPF_2025 = [
-            { limite: 12450, tipo: 0.19 },
-            { limite: 20200, tipo: 0.24 },
-            { limite: 35200, tipo: 0.30 },
-            { limite: 60000, tipo: 0.37 },
-            { limite: 300000, tipo: 0.45 }
-        ];
+            // Estado de la aplicación
+            let gastosDeducibles = [];
 
-        // Referencias a elementos del DOM
-        const inputs = {
-            ingresosBrutos: document.getElementById('ingresos-brutos'),
-            gastosDeducibles: document.getElementById('gastos-deducibles'),
-            cuotaAutonomos: document.getElementById('cuota-autonomos'),
-            aplicarIva: document.getElementById('aplicar-iva')
-        };
+            // Constantes de impuestos (hardcoded)
+            const IVA_TIPO = 0.21;
+            const TRAMOS_IRPF_2025 = [
+                { limite: 12450, tipo: 0.19 },
+                { limite: 20200, tipo: 0.24 },
+                { limite: 35200, tipo: 0.30 },
+                { limite: 60000, tipo: 0.37 },
+                { limite: 300000, tipo: 0.45 }
+            ];
 
-        const outputs = {
-            mensual: {
-                bruto: document.getElementById('bruto-mensual'),
-                cuota: document.getElementById('cuota-mensual'),
-                iva: document.getElementById('iva-mensual'),
-                irpf: document.getElementById('irpf-mensual'),
-                neto: document.getElementById('neto-mensual'),
-                view: document.getElementById('resultados-mensual'),
-                btn: document.getElementById('btn-mensual'),
-                ivaContainer: document.getElementById('iva-mensual-container')
-            },
-            trimestral: {
-                bruto: document.getElementById('bruto-trimestral'),
-                cuota: document.getElementById('cuota-trimestral'),
-                iva: document.getElementById('iva-trimestral'),
-                irpf: document.getElementById('irpf-trimestral'),
-                neto: document.getElementById('neto-trimestral'),
-                view: document.getElementById('resultados-trimestral'),
-                btn: document.getElementById('btn-trimestral'),
-                ivaContainer: document.getElementById('iva-trimestral-container')
-            },
-            anual: {
-                bruto: document.getElementById('bruto-anual'),
-                cuota: document.getElementById('cuota-anual'),
-                iva: document.getElementById('iva-anual'),
-                irpf: document.getElementById('irpf-anual'),
-                neto: document.getElementById('neto-anual'),
-                view: document.getElementById('resultados-anual'),
-                btn: document.getElementById('btn-anual'),
-                ivaContainer: document.getElementById('iva-anual-container')
-            }
-        };
-        
-        const copyBtn = document.getElementById('copy-btn');
-        const pdfBtn = document.getElementById('pdf-btn');
-        const copyFeedback = document.getElementById('copy-feedback');
-        const chartCanvas = document.getElementById('distribucion-chart');
-        let distribucionChart;
-
-        // Función para formatear a moneda
-        const formatCurrency = (value) => {
-            return value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
-        };
-
-        // Función para calcular el IRPF progresivo
-        const calcularIRPF = (baseImponible) => {
-            let irpfTotal = 0;
-            let limiteAnterior = 0;
-
-            for (const tramo of TRAMOS_IRPF_2025) {
-                if (baseImponible > limiteAnterior) {
-                    const baseEnTramo = Math.min(baseImponible - limiteAnterior, tramo.limite - limiteAnterior);
-                    irpfTotal += baseEnTramo * tramo.tipo;
-                    limiteAnterior = tramo.limite;
-                } else {
-                    break;
-                }
-            }
-             if (baseImponible > limiteAnterior) {
-                irpfTotal += (baseImponible - limiteAnterior) * TRAMOS_IRPF_2025[TRAMOS_IRPF_2025.length - 1].tipo;
-            }
-
-            return irpfTotal > 0 ? irpfTotal : 0;
-        };
-
-        // Función para crear o actualizar el gráfico
-        const actualizarGrafico = (datos) => {
-            const chartData = {
-                labels: ['Neto Final', 'IRPF', 'Cuota Autónomos'],
-                datasets: [{
-                    label: 'Distribución Anual',
-                    data: [datos.neto, datos.irpf, datos.cuota],
-                    backgroundColor: [
-                        '#16a34a', // Verde para el neto
-                        '#ef4444', // Rojo para IRPF
-                        '#6b7280'  // Gris para la cuota
-                    ],
-                    borderColor: '#f8f7f4',
-                    borderWidth: 4,
-                    hoverOffset: 8
-                }]
+            // Referencias a elementos del DOM
+            const inputs = {
+                ingresosBrutos: document.getElementById('ingresos-brutos'),
+                cuotaAutonomos: document.getElementById('cuota-autonomos'),
+                aplicarIva: document.getElementById('aplicar-iva')
+            };
+            
+            const gastosInputs = {
+                descripcion: document.getElementById('gasto-descripcion'),
+                importe: document.getElementById('gasto-importe'),
+                addBtn: document.getElementById('add-gasto-btn'),
+                lista: document.getElementById('lista-gastos'),
+                totalDisplay: document.getElementById('total-gastos-deducibles')
             };
 
-            if (datos.iva > 0) {
-                chartData.labels.splice(2, 0, 'IVA');
-                chartData.datasets[0].data.splice(2, 0, datos.iva);
-                chartData.datasets[0].backgroundColor.splice(2, 0, '#f97316'); // Naranja para IVA
-            }
+            const outputs = {
+                mensual: {
+                    bruto: document.getElementById('bruto-mensual'),
+                    cuota: document.getElementById('cuota-mensual'),
+                    iva: document.getElementById('iva-mensual'),
+                    irpf: document.getElementById('irpf-mensual'),
+                    neto: document.getElementById('neto-mensual'),
+                    view: document.getElementById('resultados-mensual'),
+                    btn: document.getElementById('btn-mensual'),
+                    ivaContainer: document.getElementById('iva-mensual-container')
+                },
+                trimestral: {
+                    bruto: document.getElementById('bruto-trimestral'),
+                    cuota: document.getElementById('cuota-trimestral'),
+                    iva: document.getElementById('iva-trimestral'),
+                    irpf: document.getElementById('irpf-trimestral'),
+                    neto: document.getElementById('neto-trimestral'),
+                    view: document.getElementById('resultados-trimestral'),
+                    btn: document.getElementById('btn-trimestral'),
+                    ivaContainer: document.getElementById('iva-trimestral-container')
+                },
+                anual: {
+                    bruto: document.getElementById('bruto-anual'),
+                    cuota: document.getElementById('cuota-anual'),
+                    iva: document.getElementById('iva-anual'),
+                    irpf: document.getElementById('irpf-anual'),
+                    neto: document.getElementById('neto-anual'),
+                    view: document.getElementById('resultados-anual'),
+                    btn: document.getElementById('btn-anual'),
+                    ivaContainer: document.getElementById('iva-anual-container')
+                }
+            };
+            
+            const copyBtn = document.getElementById('copy-btn');
+            const pdfBtn = document.getElementById('pdf-btn');
+            const copyFeedback = document.getElementById('copy-feedback');
+            const chartCanvas = document.getElementById('distribucion-chart');
+            let distribucionChart;
 
-            if (distribucionChart) {
-                distribucionChart.data = chartData;
-                distribucionChart.update();
-            } else {
-                distribucionChart = new Chart(chartCanvas, {
-                    type: 'doughnut',
-                    data: chartData,
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        if (context.parsed !== null) {
-                                            label += formatCurrency(context.parsed);
-                                        }
-                                        return label;
+            // Función para formatear a moneda
+            const formatCurrency = (value) => value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+
+            // Función para calcular el IRPF progresivo
+            const calcularIRPF = (baseImponible) => {
+                let irpfTotal = 0;
+                let limiteAnterior = 0;
+
+                for (const tramo of TRAMOS_IRPF_2025) {
+                    if (baseImponible > limiteAnterior) {
+                        const baseEnTramo = Math.min(baseImponible - limiteAnterior, tramo.limite - limiteAnterior);
+                        irpfTotal += baseEnTramo * tramo.tipo;
+                        limiteAnterior = tramo.limite;
+                    } else break;
+                }
+                 if (baseImponible > limiteAnterior) {
+                    irpfTotal += (baseImponible - limiteAnterior) * TRAMOS_IRPF_2025[TRAMOS_IRPF_2025.length - 1].tipo;
+                }
+                return irpfTotal > 0 ? irpfTotal : 0;
+            };
+
+            // Función para renderizar la lista de gastos
+            const renderizarGastos = () => {
+                gastosInputs.lista.innerHTML = '';
+                let total = 0;
+                gastosDeducibles.forEach((gasto, index) => {
+                    total += gasto.importe;
+                    const gastoEl = document.createElement('div');
+                    gastoEl.className = 'flex justify-between items-center bg-gray-100 p-2 rounded';
+                    gastoEl.innerHTML = `
+                        <span class="text-sm">${gasto.descripcion}</span>
+                        <div class="flex items-center">
+                            <span class="text-sm font-semibold mr-4">${formatCurrency(gasto.importe)}</span>
+                            <button data-index="${index}" class="delete-btn text-red-500 hover:text-red-700 font-bold">&times;</button>
+                        </div>
+                    `;
+                    gastosInputs.lista.appendChild(gastoEl);
+                });
+                gastosInputs.totalDisplay.textContent = formatCurrency(total);
+                calcularYActualizar(); // Recalcular todo cuando cambian los gastos
+            };
+
+            // Función para añadir un gasto
+            const anadirGasto = () => {
+                const descripcion = gastosInputs.descripcion.value.trim();
+                const importe = parseFloat(gastosInputs.importe.value);
+
+                if (descripcion && !isNaN(importe) && importe > 0) {
+                    gastosDeducibles.push({ descripcion, importe });
+                    gastosInputs.descripcion.value = '';
+                    gastosInputs.importe.value = '';
+                    gastosInputs.descripcion.focus();
+                    renderizarGastos();
+                }
+            };
+            
+            // Función para eliminar un gasto
+            gastosInputs.lista.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-btn')) {
+                    const index = parseInt(e.target.dataset.index, 10);
+                    gastosDeducibles.splice(index, 1);
+                    renderizarGastos();
+                }
+            });
+
+            // Función para crear o actualizar el gráfico
+            const actualizarGrafico = (datos) => {
+                const chartData = {
+                    labels: ['Neto Final', 'IRPF', 'Cuota Autónomos'],
+                    datasets: [{
+                        label: 'Distribución Anual',
+                        data: [datos.neto, datos.irpf, datos.cuota],
+                        backgroundColor: ['#16a34a', '#ef4444', '#6b7280'],
+                        borderColor: '#f8f7f4',
+                        borderWidth: 4,
+                        hoverOffset: 8
+                    }]
+                };
+
+                if (datos.iva > 0) {
+                    chartData.labels.splice(2, 0, 'IVA');
+                    chartData.datasets[0].data.splice(2, 0, datos.iva);
+                    chartData.datasets[0].backgroundColor.splice(2, 0, '#f97316');
+                }
+
+                if (distribucionChart) {
+                    distribucionChart.data = chartData;
+                    distribucionChart.update();
+                } else {
+                    distribucionChart = new Chart(chartCanvas, {
+                        type: 'doughnut',
+                        data: chartData,
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { position: 'top' },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (context) => `${context.label}: ${formatCurrency(context.parsed)}`
                                     }
                                 }
                             }
-                        }
-                    },
-                });
-            }
-        };
-
-        // Función principal de cálculo
-        const calcularYActualizar = () => {
-            // 1. Leer valores de entrada (ahora son anuales)
-            const ingresosBrutosAnuales = parseFloat(inputs.ingresosBrutos.value) || 0;
-            const gastosDeduciblesAnuales = parseFloat(inputs.gastosDeducibles.value) || 0;
-            const cuotaAutonomosAnual = parseFloat(inputs.cuotaAutonomos.value) || 0;
-            const aplicarIva = inputs.aplicarIva.checked;
-
-            // 2. Cálculos Anuales
-            const baseImponibleIRPF = Math.max(0, ingresosBrutosAnuales - gastosDeduciblesAnuales - cuotaAutonomosAnual);
-            
-            const irpfAnual = calcularIRPF(baseImponibleIRPF);
-            const ivaAnual = aplicarIva ? ingresosBrutosAnuales * IVA_TIPO : 0;
-            
-            const netoAnual = ingresosBrutosAnuales - cuotaAutonomosAnual - ivaAnual - irpfAnual;
-
-            // 3. Actualizar DOM
-            // Anual
-            outputs.anual.bruto.textContent = formatCurrency(ingresosBrutosAnuales);
-            outputs.anual.cuota.textContent = formatCurrency(cuotaAutonomosAnual);
-            outputs.anual.iva.textContent = formatCurrency(ivaAnual);
-            outputs.anual.irpf.textContent = formatCurrency(irpfAnual);
-            outputs.anual.neto.textContent = formatCurrency(netoAnual);
-
-            // Trimestral
-            outputs.trimestral.bruto.textContent = formatCurrency(ingresosBrutosAnuales / 4);
-            outputs.trimestral.cuota.textContent = formatCurrency(cuotaAutonomosAnual / 4);
-            outputs.trimestral.iva.textContent = formatCurrency(ivaAnual / 4);
-            outputs.trimestral.irpf.textContent = formatCurrency(irpfAnual / 4);
-            outputs.trimestral.neto.textContent = formatCurrency(netoAnual / 4);
-
-            // Mensual
-            outputs.mensual.bruto.textContent = formatCurrency(ingresosBrutosAnuales / 12);
-            outputs.mensual.cuota.textContent = formatCurrency(cuotaAutonomosAnual / 12);
-            outputs.mensual.iva.textContent = formatCurrency(ivaAnual / 12);
-            outputs.mensual.irpf.textContent = formatCurrency(irpfAnual / 12);
-            outputs.mensual.neto.textContent = formatCurrency(netoAnual / 12);
-            
-            // Ocultar/mostrar fila de IVA
-            [outputs.mensual, outputs.trimestral, outputs.anual].forEach(p => {
-                p.ivaContainer.style.display = aplicarIva ? 'flex' : 'none';
-            });
-
-            // 4. Actualizar Gráfico (con valores anuales)
-            actualizarGrafico({
-                neto: Math.max(0, netoAnual),
-                irpf: irpfAnual,
-                iva: ivaAnual,
-                cuota: cuotaAutonomosAnual
-            });
-        };
-        
-        // Función para cambiar la vista de periodo
-        const cambiarVista = (periodo) => {
-            Object.keys(outputs).forEach(p => {
-                if (p === periodo) {
-                    outputs[p].view.classList.remove('hidden');
-                    outputs[p].btn.classList.add('active');
-                } else if (outputs[p].view) {
-                    outputs[p].view.classList.add('hidden');
-                    outputs[p].btn.classList.remove('active');
+                        },
+                    });
                 }
-            });
-        };
+            };
 
-        // Event Listeners para los inputs
-        Object.values(inputs).forEach(input => {
-            input.addEventListener('input', calcularYActualizar);
-        });
-        
-        // Event Listeners para los botones de periodo
-        outputs.mensual.btn.addEventListener('click', () => cambiarVista('mensual'));
-        outputs.trimestral.btn.addEventListener('click', () => cambiarVista('trimestral'));
-        outputs.anual.btn.addEventListener('click', () => cambiarVista('anual'));
+            // Función principal de cálculo
+            const calcularYActualizar = () => {
+                const ingresosBrutosAnuales = parseFloat(inputs.ingresosBrutos.value) || 0;
+                const cuotaAutonomosAnual = parseFloat(inputs.cuotaAutonomos.value) || 0;
+                const aplicarIva = inputs.aplicarIva.checked;
+                const gastosDeduciblesAnuales = gastosDeducibles.reduce((acc, gasto) => acc + gasto.importe, 0);
 
-        // Event Listener para copiar a portapapeles
-        copyBtn.addEventListener('click', () => {
-            const activePeriod = document.querySelector('.btn-period.active').id.split('-')[1];
-            
-            const data = [
-                ["Concepto", "Valor"],
-                ["Ingresos Brutos Anuales", inputs.ingresosBrutos.value],
-                ["Gastos Deducibles Anuales", inputs.gastosDeducibles.value],
-                ["Cuota Autónomos Anual", inputs.cuotaAutonomos.value],
-                ["Aplicar IVA", inputs.aplicarIva.checked ? "Sí" : "No"],
-                ["---", "---"],
-                [`Resultados (${activePeriod})`, ""],
-                ["Ingresos Brutos", outputs[activePeriod].bruto.textContent],
-                ["Cuota Autónomos", outputs[activePeriod].cuota.textContent],
-            ];
+                const baseImponibleIRPF = Math.max(0, ingresosBrutosAnuales - gastosDeduciblesAnuales - cuotaAutonomosAnual);
+                const irpfAnual = calcularIRPF(baseImponibleIRPF);
+                const ivaAnual = aplicarIva ? ingresosBrutosAnuales * IVA_TIPO : 0;
+                const netoAnual = ingresosBrutosAnuales - cuotaAutonomosAnual - ivaAnual - irpfAnual;
 
-            if (inputs.aplicarIva.checked) {
-                data.push(["IVA", outputs[activePeriod].iva.textContent]);
-            }
-            
-            data.push(["IRPF", outputs[activePeriod].irpf.textContent]);
-            data.push(["Neto Final", outputs[activePeriod].neto.textContent]);
-            
-            const tsv = data.map(row => row.join('\t')).join('\n');
-            
-            const textarea = document.createElement('textarea');
-            textarea.value = tsv;
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                copyFeedback.textContent = '¡Copiado al portapapeles!';
-                setTimeout(() => copyFeedback.textContent = '', 2000);
-            } catch (err) {
-                copyFeedback.textContent = 'Error al copiar.';
-            }
-            document.body.removeChild(textarea);
-        });
+                // Actualizar DOM
+                Object.entries(outputs).forEach(([periodo, els]) => {
+                    const divisor = periodo === 'anual' ? 1 : (periodo === 'trimestral' ? 4 : 12);
+                    els.bruto.textContent = formatCurrency(ingresosBrutosAnuales / divisor);
+                    els.cuota.textContent = formatCurrency(cuotaAutonomosAnual / divisor);
+                    els.iva.textContent = formatCurrency(ivaAnual / divisor);
+                    els.irpf.textContent = formatCurrency(irpfAnual / divisor);
+                    els.neto.textContent = formatCurrency(netoAnual / divisor);
+                    els.ivaContainer.style.display = aplicarIva ? 'flex' : 'none';
+                });
 
-        // Event Listener para exportar a PDF
-        pdfBtn.addEventListener('click', () => {
-            const { jsPDF } = window.jspdf;
-            const elementToCapture = document.querySelector('.lg\\:col-span-2');
+                actualizarGrafico({
+                    neto: Math.max(0, netoAnual),
+                    irpf: irpfAnual,
+                    iva: ivaAnual,
+                    cuota: cuotaAutonomosAnual
+                });
+            };
             
-            html2canvas(elementToCapture, { scale: 2 }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                let position = 0;
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-                pdf.save("calculo-autonomo-barcelona-2025.pdf");
-            });
-        });
+            const cambiarVista = (periodo) => {
+                Object.values(outputs).forEach(p => {
+                    const isActive = p.btn.id.includes(periodo);
+                    p.view.classList.toggle('hidden', !isActive);
+                    p.btn.classList.toggle('active', isActive);
+                });
+            };
 
-        // Carga inicial
-        document.addEventListener('DOMContentLoaded', () => {
-            calcularYActualizar();
+            // Event Listeners
+            Object.values(inputs).forEach(input => input.addEventListener('input', calcularYActualizar));
+            gastosInputs.addBtn.addEventListener('click', anadirGasto);
+            Object.values(outputs).forEach(p => p.btn.addEventListener('click', () => cambiarVista(p.btn.id.split('-')[1])));
+            
+            // Carga inicial
+            renderizarGastos();
             cambiarVista('mensual');
         });
-
     </script>
 </body>
 </html>
